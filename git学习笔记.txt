@@ -16,7 +16,7 @@
 		git log  //git log --pretty=oneline
 	2.HEAD^回退到上个版本
 		git reset --hard HEAD^
-		//注：，Git必须知道当前版本是哪个版本，在Git中，用HEAD表示当前版本，
+		//注：Git必须知道当前版本是哪个版本，在Git中，用HEAD表示当前版本，
 		//也就是最新的提交3628164...882e1e0（注意我的提交ID和你的肯定不一样），上一个版本就是HEAD^，
 		//上上一个版本就是HEAD^^，当然往上100个版本写100个^比较容易数不过来，所以写成HEAD~100。
 		git reset --hard 744f63b  //重新回到GPL版本
@@ -74,7 +74,8 @@
  2.添加远程库
 	1.登陆GitHub，然后，在右上角找到“Create a new repo”按钮，创建一个新的仓库
 	2.在Repository name填入myProject，其他保持默认设置，点击“Create repository”按钮，就成功地创建了一个新的Git仓库
-	3.git remote add origin https://github.com/loveliukai/myProject.git关联远程仓库  git remote add origin git@github.com:loveliukai/myProject.git(SSH协议，速度更快)
+	3.git remote add origin https://github.com/loveliukai/myProject.git关联远程仓库  
+	  git remote add origin git@github.com:loveliukai/myProject.git(SSH协议，速度更快)
 	4.git push -u origin master 推送本地分支到远程库
 	
 	
@@ -86,4 +87,128 @@
 
  3.从远程库克隆
 	创建远程库后使用git clone https://github.com/loveliukai/gitskills.git创建本地库  git clone git@github.com:loveliukai/gitskills.git
+四、分支管理
+ 1.创建和合并分支
+	a.创建一个新的分支dev
+		git checkout -b dev
+		git checkout命令加上-b参数表示创建并切换，相当于以下两条命令：
+		git branch dev  
+		git checkout dev
+ 2.查看当前分支
+	git branch
+	git branch命令会列出所有分支，当前分支前面会标一个*号。
+	切换回主分支
+		git checkout branch
+ 3.将master分支的结果合并到当前分支
+	git merge dev
+	//git merge命令用于合并指定分支到当前分支。合并后，再查看readme.txt的内容，就可以看到，和dev分支的最新提交是完全一样的。
+	//注意到上面的Fast-forward信息，Git告诉我们，这次合并是“快进模式”，也就是直接把master指向dev的当前提交，所以合并速度非常快。
+	//当然，也不是每次合并都能Fast-forward，我们后面会讲其他方式的合并
+ 4.删除dev分支
+	git branch -d dev
+ 5.解决冲突
+	git log --graph --pretty=oneline --abbrev-commit
+	查看分支合并情况
+	
+	小结
+	当Git无法自动合并分支时，就必须首先解决冲突。解决冲突后，再提交，合并完成。
+	用git log --graph命令可以看到分支合并图。
+ 6.分支策略
+	不使用Fast forward,合并分支后分支信息会丢失
+	git merge --no-ff -m "merge with no-ff" dev  
+	//准备合并dev分支，请注意--no-ff参数，表示禁用Fast forward
+	
+	分支策略：
+		在实际开发中，我们应该按照几个基本原则进行分支管理：
+		首先，master分支应该是非常稳定的，也就是仅用来发布新版本，平时不能在上面干活；
+	那在哪干活呢？干活都在dev分支上，也就是说，dev分支是不稳定的，到某个时候，比如1.0版本发布时，
+	再把dev分支合并到master上，在master分支发布1.0版本；你和你的小伙伴们每个人都在dev分支上干活，
+	每个人都有自己的分支，时不时地往dev分支上合并就可以了。
+	
+	合并分支时，加上--no-ff参数就可以用普通模式合并，合并后的历史有分支，能看出来曾经做过合并，
+	而fast forward合并就看不出来曾经做过合并。
+ 7.bug分支
+	1.把当前工作现场“储藏”起来
+		git stash
+	2.查看保存的工作现场
+		git stash list
+	//工作现场还在，Git把stash内容存在某个地方了，但是需要恢复一下，有两个办法：
+	//一是用git stash apply恢复，但是恢复后，stash内容并不删除，你需要用git stash drop来删除；
+	//另一种方式是用git stash pop，恢复的同时把stash内容也删了
+	3.回复指定stash
+		git stash apply stash@{0}
+	修复bug时，我们会通过创建新的bug分支进行修复，然后合并，最后删除；
+	当手头工作没有完成时，先把工作现场git stash一下，然后去修复bug，修复后，再git stash pop，回到工作现场。
+	
+	小结：
+		开发一个新feature，最好新建一个分支；
+		如果要丢弃一个没有被合并过的分支，可以通过git branch -D <name>强行删除。
+ 8.推送分支:
+	推送分支，就是把该分支上的所有本地提交推送到远程库。
+	推送时，要指定本地分支，这样，Git就会把该分支推送到远程库对应的远程分支上
+   git push origin master
+    如果要推送其他分支，比如dev，就改成：
+   git push origin dev
+   
+ 但是，并不是一定要把本地分支往远程推送，那么，哪些分支需要推送，哪些不需要呢？
+   1. master分支是主分支，因此要时刻与远程同步；
+   2.dev分支是开发分支，团队所有成员都需要在上面工作，所以也需要与远程同步；
+   3.bug分支只用于在本地修复bug，就没必要推到远程了，除非老板要看看你每周到底修复了几个bug；
+   4.feature分支是否推到远程，取决于你是否和你的小伙伴合作在上面开发。
+ 总之，就是在Git中，分支完全可以在本地自己藏着玩，是否推送，视你的心情而定！
+ 9.多人协作
+	1.多人协作的工作模式通常是这样：
+    2.首先，可以试图用git push origin branch-name推送自己的修改；
+    3.如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
+    4.如果合并有冲突，则解决冲突，并在本地提交；
+    5.没有冲突或者解决掉冲突后，再用git push origin branch-name推送就能成功！
+	6.如果git pull提示“no tracking information”，则说明本地分支和远程分支的链接关系没有创建，
+		用命令git branch --set-upstream branch-name origin/branch-name。
+	  这就是多人协作的工作模式，一旦熟悉了，就非常简单。
+小结
 
+    查看远程库信息，使用git remote -v；
+    本地新建的分支如果不推送到远程，对其他人就是不可见的；
+    从本地推送分支，使用git push origin branch-name，如果推送失败，先用git pull抓取远程的新提交；
+    在本地创建和远程分支对应的分支，使用git checkout -b branch-name origin/branch-name，本地和远程分支的名称最好一致；
+    建立本地分支和远程分支的关联，使用git branch --set-upstream branch-name origin/branch-name；
+    从远程抓取分支，使用git pull，如果有冲突，要先处理冲突。
+五、标签管理
+ 1.打标签
+  git tag v1.0
+  默认标签是打在最新提交的commit上的。有时候，如果忘了打标签，比如，现在已经是周五了，但应该在周一打的标签没有打，怎么办？
+  方法是找到历史提交的commit id，然后打上就可以了：
+  git log --pretty=oneline --abbrev-commit
+  
+  注意，标签不是按时间顺序列出，而是按字母排序的。可以用git show <tagname>查看标签信息：
+  git show v0.9
+  还可以通过-s用私钥签名一个标签
+  git tag -s v0.2 -m "signed version 0.2 released" fec145a
+  //出现报错是因为需要配置gpg
+  小结
+	命令git tag <name>用于新建一个标签，默认为HEAD，也可以指定一个commit id；
+    git tag -a <tagname> -m "blablabla..."可以指定标签信息；
+    git tag -s <tagname> -m "blablabla..."可以用PGP签名标签；
+    命令git tag可以查看所有标签。
+ 2.删除本地标签
+	git tag -d v0.1
+	//因为创建的标签都只存储在本地，不会自动推送到远程。所以，打错的标签可以在本地安全删除。
+	//如果要推送某个标签到远程，使用命令git push origin <tagname>
+	一次性推送全部尚未推送到远程的本地标签
+	git push origin --tags
+ 3.删除远程标签
+    a.先从本地删除
+	  git taf -d v1.0
+	b.然后从远程删除
+	  git push origin :refs/tags/v1.0
+	  
+	小结
+	  a.命令git push origin <tagname>可以推送一个本地标签；
+      b.命令git push origin --tags可以推送全部未推送过的本地标签；
+      c.命令git tag -d <tagname>可以删除一个本地标签；
+      4.命令git push origin :refs/tags/<tagname>可以删除一个远程标签。
+	  
+ 4.配置别名
+  git config --global alias.st status
+
+	
